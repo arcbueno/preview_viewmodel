@@ -12,13 +12,35 @@ class HomeViewModel {
   }
 
   void addName(String name) {
-    _nameRepository.addName(name);
-    reloadNames();
+    validateName(name);
+    if (state.value is HomeStateEmpty &&
+        (state.value as HomeStateEmpty).error == null) {
+      _nameRepository.addName(name);
+      reloadNames();
+    }
+  }
+
+  void validateName(String name) {
+    if (name.isEmpty) {
+      if (state.value is HomeStateEmpty) {
+        state.value = (state.value as HomeStateEmpty)
+            .copyWith(error: 'Nome não pode ser vazio');
+        return;
+      }
+      state.value = HomeStateEmpty(error: 'Nome não pode ser vazio');
+    }
   }
 
   Future<void> reloadNames() async {
-    state.value = HomeStateLoading();
+    if (state.value is HomeStateEmpty) {
+      state.value = (state.value as HomeStateEmpty).copyWith(isLoading: true);
+    } else {
+      state.value = HomeStateLoading();
+    }
     await Future.delayed(const Duration(seconds: 2));
-    state.value = HomeStateSuccess(_nameRepository.getNames());
+    state.value =
+        HomeStateEmpty(names: _nameRepository.getNames(), isLoading: false);
   }
+
+  void removeName(int index) {}
 }
